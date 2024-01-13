@@ -23,7 +23,7 @@ function render(vnode, container) {
   });
   // 处理 children
   if (props.children.length) {
-    renderChildren(props.children, container);
+    renderChildren(props.children, el);
   }
   container.append(el);
 }
