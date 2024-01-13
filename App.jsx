@@ -1,4 +1,4 @@
-import React from './package/React.js';
+import React from './package/React';
 
 const App = React.createElement('div', { class: 'text' }, 'hi, react');
 
