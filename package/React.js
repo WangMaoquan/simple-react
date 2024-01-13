@@ -17,7 +17,9 @@ function render(vnode, container) {
   const el = document.createElement(type);
   // 处理属性
   Object.keys(props).forEach((prop) => {
-    if (prop !== 'children') {
+    if (prop === 'class') {
+      el.className = props[prop];
+    } else if (prop !== 'children') {
       el[prop] = props[prop];
     }
   });
@@ -32,6 +34,8 @@ function renderChildren(children, container) {
   children.forEach((child) => {
     if (typeof child === 'string' || typeof child === 'number') {
       container.append(createTextNode(child));
+    } else {
+      render(child, container);
     }
   });
 }
