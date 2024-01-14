@@ -1,3 +1,5 @@
+import { createFiber } from './Fiber';
+
 function createElement(type, props, ...children) {
   return {
     type,
@@ -12,42 +14,75 @@ function createElement(type, props, ...children) {
             },
           };
         }
+        return child;
       }),
     },
   };
 }
 
-function createTextNode(text) {
-  return document.createTextNode(text);
-}
-
-function render(vnode, container) {
-  const { props, type } = vnode;
-  const el = document.createElement(type);
-  // 处理属性
-  Object.keys(props).forEach((prop) => {
-    if (prop === 'class') {
-      el.className = props[prop];
-    } else if (prop !== 'children') {
-      el[prop] = props[prop];
-    }
-  });
-  // 处理 children
-  if (props.children.length) {
-    renderChildren(props.children, el);
+let nextFiber = null;
+function workLoop(deadline) {
+  let shouldYield = false;
+  while (!shouldYield && nextFiber) {
+    nextFiber = preformWorkOfUnit(nextFiber);
+    shouldYield = deadline.timeRemaining() < 1;
   }
-  container.append(el);
+  requestIdleCallback(workLoop);
 }
 
-function renderChildren(children, container) {
-  children.forEach((child) => {
-    if (child.type === 'TEXT_ELEMENT') {
-      container.append(createTextNode(child.props.nodeValue));
-    } else {
-      render(child, container);
-    }
-  });
+function preformWorkOfUnit(fiber) {
+  const { props, type } = fiber;
+  if (!fiber.dom) {
+    // 创建dom
+    const el = (fiber.dom =
+      type === 'TEXT_ELEMENT'
+        ? document.createTextNode('')
+        : document.createElement(type));
+    // 处理 props
+    Object.keys(props).forEach((prop) => {
+      if (prop === 'class') {
+        el.className = props[prop];
+      } else if (prop !== 'children') {
+        el[prop] = props[prop];
+      }
+    });
+    fiber.return.dom.append(el);
+  }
+  // 转换成链表
+  const { children = [] } = props;
+  if (children.length) {
+    let prevFiber = null;
+    children.forEach((child, index) => {
+      const newFiber = createFiber(child);
+      newFiber.return = fiber;
+      if (index === 0) {
+        fiber.child = newFiber;
+      } else {
+        prevFiber.sibling = newFiber;
+      }
+      prevFiber = newFiber;
+    });
+  }
+  // 返回下一个
+  if (fiber.child) {
+    return fiber.child;
+  }
+  if (fiber.sibling) {
+    return fiber.sibling;
+  }
+  return fiber?.return?.sibling;
 }
+
+function render(el, container) {
+  nextFiber = {
+    dom: container,
+    props: {
+      children: [el],
+    },
+  };
+}
+
+requestIdleCallback(workLoop);
 
 const React = {
   createElement,

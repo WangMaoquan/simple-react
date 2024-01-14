@@ -1,0 +1,14 @@
+export class Fiber {
+  constructor(type, props, dom) {
+    this.child = null;
+    this.return = null;
+    this.sibling = null;
+    this.type = type;
+    this.dom = dom;
+    this.props = props;
+  }
+}
+
+export function createFiber({ type, props, dom }) {
+  return new Fiber(type, props, dom);
+}
