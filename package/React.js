@@ -3,7 +3,16 @@ function createElement(type, props, ...children) {
     type,
     props: {
       ...props,
-      children,
+      children: children.map((child) => {
+        if (typeof child === 'string' || typeof child === 'number') {
+          return {
+            type: 'TEXT_ELEMENT',
+            props: {
+              nodeValue: child,
+            },
+          };
+        }
+      }),
     },
   };
 }
@@ -32,8 +41,8 @@ function render(vnode, container) {
 
 function renderChildren(children, container) {
   children.forEach((child) => {
-    if (typeof child === 'string' || typeof child === 'number') {
-      container.append(createTextNode(child));
+    if (child.type === 'TEXT_ELEMENT') {
+      container.append(createTextNode(child.props.nodeValue));
     } else {
       render(child, container);
     }
