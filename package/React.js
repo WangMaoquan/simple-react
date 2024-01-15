@@ -49,25 +49,8 @@ function updateProps(el, props) {
   });
 }
 
-function preformWorkOfUnit(fiber) {
-  const { props, type } = fiber;
-  // functionComponent type 就是我们写的那个函数
-  const isFunctionComponent = typeof fiber.type === 'function';
-  if (!isFunctionComponent) {
-    if (!fiber.dom) {
-      // 创建dom
-      const el = (fiber.dom =
-        type === 'TEXT_ELEMENT'
-          ? document.createTextNode('')
-          : document.createElement(type));
-      // 处理 props
-      updateProps(el, props);
-    }
-  }
-  // 转换成链表
-  const children = isFunctionComponent
-    ? [fiber.type(fiber.props)]
-    : props?.children || [];
+// 转换成链表
+function initChildren(fiber, children) {
   if (children.length) {
     let prevFiber = null;
     children.forEach((child, index) => {
@@ -80,6 +63,36 @@ function preformWorkOfUnit(fiber) {
       }
       prevFiber = newFiber;
     });
+  }
+}
+
+function updateFunctionComponent(fiber) {
+  const children = [fiber.type(fiber.props)];
+  initChildren(fiber, children);
+}
+
+function updateHostComponent(fiber) {
+  const { props, type } = fiber;
+  if (!fiber.dom) {
+    // 创建dom
+    const el = (fiber.dom =
+      type === 'TEXT_ELEMENT'
+        ? document.createTextNode('')
+        : document.createElement(type));
+    // 处理 props
+    updateProps(el, props);
+  }
+  const children = props?.children || [];
+  initChildren(fiber, children);
+}
+
+function preformWorkOfUnit(fiber) {
+  // functionComponent type 就是我们写的那个函数
+  const isFunctionComponent = typeof fiber.type === 'function';
+  if (isFunctionComponent) {
+    updateFunctionComponent(fiber);
+  } else {
+    updateHostComponent(fiber);
   }
   // 返回下一个
   if (fiber.child) {
