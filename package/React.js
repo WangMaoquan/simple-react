@@ -38,25 +38,36 @@ function workLoop(deadline) {
   requestIdleCallback(workLoop);
 }
 
+function updateProps(el, props) {
+  if (!props) return;
+  Object.keys(props).forEach((prop) => {
+    if (prop === 'class') {
+      el.className = props[prop];
+    } else if (prop !== 'children') {
+      el[prop] = props[prop];
+    }
+  });
+}
+
 function preformWorkOfUnit(fiber) {
   const { props, type } = fiber;
-  if (!fiber.dom) {
-    // 创建dom
-    const el = (fiber.dom =
-      type === 'TEXT_ELEMENT'
-        ? document.createTextNode('')
-        : document.createElement(type));
-    // 处理 props
-    Object.keys(props).forEach((prop) => {
-      if (prop === 'class') {
-        el.className = props[prop];
-      } else if (prop !== 'children') {
-        el[prop] = props[prop];
-      }
-    });
+  // functionComponent type 就是我们写的那个函数
+  const isFunctionComponent = typeof fiber.type === 'function';
+  if (!isFunctionComponent) {
+    if (!fiber.dom) {
+      // 创建dom
+      const el = (fiber.dom =
+        type === 'TEXT_ELEMENT'
+          ? document.createTextNode('')
+          : document.createElement(type));
+      // 处理 props
+      updateProps(el, props);
+    }
   }
   // 转换成链表
-  const { children = [] } = props;
+  const children = isFunctionComponent
+    ? [fiber.type(fiber.props)]
+    : props?.children || [];
   if (children.length) {
     let prevFiber = null;
     children.forEach((child, index) => {
@@ -74,10 +85,15 @@ function preformWorkOfUnit(fiber) {
   if (fiber.child) {
     return fiber.child;
   }
-  if (fiber.sibling) {
-    return fiber.sibling;
+  // functionComponent 包的 fiber 的sibling 也需要递归
+  // return fiber?.return?.sibling;
+  let nextFiber = fiber;
+  while (nextFiber) {
+    if (nextFiber.sibling) {
+      return nextFiber.sibling;
+    }
+    nextFiber = nextFiber.return;
   }
-  return fiber?.return?.sibling;
 }
 
 function commitRoot() {
@@ -86,7 +102,15 @@ function commitRoot() {
 
 function commitWork(fiber) {
   if (!fiber) return;
-  fiber.return.dom.append(fiber.dom);
+  let parentFiber = fiber.return;
+  // functionComponent 是不存在 DOM 的, 相当于 对元素 包了一层, 所以插入时需要去寻找存在 DOM 的return
+  while (!parentFiber.dom) {
+    parentFiber = parentFiber.return;
+  }
+  // 这里的fiber 可能是functionComponent 的fiber
+  if (fiber.dom) {
+    parentFiber.dom.append(fiber.dom);
+  }
   commitWork(fiber.child);
   commitWork(fiber.sibling);
 }
