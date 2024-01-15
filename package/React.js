@@ -1,4 +1,4 @@
-import { createFiber } from './Fiber';
+import { Fiber, createFiber } from './Fiber';
 
 function createElement(type, props, ...children) {
   return {
@@ -20,13 +20,21 @@ function createElement(type, props, ...children) {
   };
 }
 
-let nextFiber = null;
+let root = null;
+let nextWorkOfUnit = null;
 function workLoop(deadline) {
   let shouldYield = false;
-  while (!shouldYield && nextFiber) {
-    nextFiber = preformWorkOfUnit(nextFiber);
+  while (!shouldYield && nextWorkOfUnit) {
+    nextWorkOfUnit = preformWorkOfUnit(nextWorkOfUnit);
     shouldYield = deadline.timeRemaining() < 1;
   }
+
+  // 统一提交
+  if (!nextWorkOfUnit && root) {
+    commitRoot();
+    root = null;
+  }
+
   requestIdleCallback(workLoop);
 }
 
@@ -46,7 +54,6 @@ function preformWorkOfUnit(fiber) {
         el[prop] = props[prop];
       }
     });
-    fiber.return.dom.append(el);
   }
   // 转换成链表
   const { children = [] } = props;
@@ -73,13 +80,25 @@ function preformWorkOfUnit(fiber) {
   return fiber?.return?.sibling;
 }
 
+function commitRoot() {
+  commitWork(root.child);
+}
+
+function commitWork(fiber) {
+  if (!fiber) return;
+  fiber.return.dom.append(fiber.dom);
+  commitWork(fiber.child);
+  commitWork(fiber.sibling);
+}
+
 function render(el, container) {
-  nextFiber = {
+  nextWorkOfUnit = {
     dom: container,
     props: {
       children: [el],
     },
   };
+  root = nextWorkOfUnit;
 }
 
 requestIdleCallback(workLoop);
