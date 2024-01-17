@@ -20,7 +20,8 @@ function createElement(type, props, ...children) {
   };
 }
 
-let root = null;
+let workInProgress = null;
+let currentRoot = null;
 let nextWorkOfUnit = null;
 function workLoop(deadline) {
   let shouldYield = false;
@@ -30,49 +31,78 @@ function workLoop(deadline) {
   }
 
   // 统一提交
-  if (!nextWorkOfUnit && root) {
+  if (!nextWorkOfUnit && workInProgress) {
     commitRoot();
   }
 
   requestIdleCallback(workLoop);
 }
 
-function updateProps(el, props) {
-  if (!props) return;
-  Object.keys(props).forEach((prop) => {
+function updateProps(el, nextProps, prevProps) {
+  if (!nextProps) return;
+  // 新没有 旧有
+  Object.keys(prevProps).forEach((prop) => {
+    if (prop !== 'children') {
+      if (!(prop in nextProps)) {
+        if (prop === 'className') {
+          el.removeAttribute('class');
+        } else {
+          el.removeAttribute(prop);
+        }
+      }
+    }
+  });
+  // 新有 旧没有
+  // 新有 旧有
+
+  Object.keys(nextProps).forEach((prop) => {
     if (prop !== 'children') {
       if (prop.startsWith('on')) {
         const eventType = prop.toLowerCase().slice(2);
-        el.addEventListener(eventType, props[prop]);
+        el.removeEventListener(eventType, prevProps[prop]);
+        el.addEventListener(eventType, nextProps[prop]);
       } else if (prop === 'class') {
-        el.className = props[prop];
+        el.className = nextProps[prop];
       } else {
-        el[prop] = props[prop];
+        el[prop] = nextProps[prop];
       }
     }
   });
 }
 
 // 转换成链表
-function initChildren(fiber, children) {
+function reconcileChildren(fiber, children) {
   if (children.length) {
-    let prevFiber = null;
+    let prevChild = null;
+    let oldFiber = fiber?.alternate?.child;
     children.forEach((child, index) => {
+      const isSameType = oldFiber && child.type === oldFiber.type;
       const newFiber = createFiber(child);
       newFiber.return = fiber;
+      if (isSameType) {
+        // update
+        newFiber.dom = oldFiber.dom;
+        newFiber.effectTag = 'update';
+        newFiber.alternate = oldFiber;
+      } else {
+        newFiber.effectTag = 'placement';
+      }
+      if (oldFiber) {
+        oldFiber = oldFiber.sibling;
+      }
       if (index === 0) {
         fiber.child = newFiber;
       } else {
-        prevFiber.sibling = newFiber;
+        prevChild.sibling = newFiber;
       }
-      prevFiber = newFiber;
+      prevChild = newFiber;
     });
   }
 }
 
 function updateFunctionComponent(fiber) {
   const children = [fiber.type(fiber.props)];
-  initChildren(fiber, children);
+  reconcileChildren(fiber, children);
 }
 
 function updateHostComponent(fiber) {
@@ -84,10 +114,10 @@ function updateHostComponent(fiber) {
         ? document.createTextNode('')
         : document.createElement(type));
     // 处理 props
-    updateProps(el, props);
+    updateProps(el, props, {});
   }
   const children = props?.children || [];
-  initChildren(fiber, children);
+  reconcileChildren(fiber, children);
 }
 
 function preformWorkOfUnit(fiber) {
@@ -114,8 +144,9 @@ function preformWorkOfUnit(fiber) {
 }
 
 function commitRoot() {
-  commitWork(root.child);
-  root = null;
+  commitWork(workInProgress.child);
+  currentRoot = workInProgress;
+  workInProgress = null;
 }
 
 function commitWork(fiber) {
@@ -125,12 +156,26 @@ function commitWork(fiber) {
   while (!parentFiber.dom) {
     parentFiber = parentFiber.return;
   }
-  // 这里的fiber 可能是functionComponent 的fiber
-  if (fiber.dom) {
-    parentFiber.dom.append(fiber.dom);
+  if (fiber.effectTag === 'placement') {
+    // 这里的fiber 可能是functionComponent 的fiber
+    if (fiber.dom) {
+      parentFiber.dom.append(fiber.dom);
+    }
+  } else if (fiber.effectTag === 'update' && fiber.dom) {
+    updateProps(fiber.dom, fiber.props, fiber.alternate?.props || {});
   }
   commitWork(fiber.child);
   commitWork(fiber.sibling);
+}
+
+// 触发更新的
+function update() {
+  workInProgress = {
+    dom: currentRoot.dom,
+    props: currentRoot.props,
+    alternate: currentRoot,
+  };
+  nextWorkOfUnit = workInProgress;
 }
 
 function render(el, container) {
@@ -140,7 +185,7 @@ function render(el, container) {
       children: [el],
     },
   };
-  root = nextWorkOfUnit;
+  workInProgress = nextWorkOfUnit;
 }
 
 requestIdleCallback(workLoop);
@@ -148,6 +193,7 @@ requestIdleCallback(workLoop);
 const React = {
   createElement,
   render,
+  update,
 };
 
 export default React;

@@ -6,6 +6,8 @@ export class Fiber {
     this.type = type;
     this.dom = dom;
     this.props = props;
+    this.alternate = null; // 备份的fiber
+    this.effectTag = undefined;
   }
 }
 
