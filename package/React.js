@@ -32,7 +32,6 @@ function workLoop(deadline) {
   // 统一提交
   if (!nextWorkOfUnit && root) {
     commitRoot();
-    root = null;
   }
 
   requestIdleCallback(workLoop);
@@ -41,10 +40,15 @@ function workLoop(deadline) {
 function updateProps(el, props) {
   if (!props) return;
   Object.keys(props).forEach((prop) => {
-    if (prop === 'class') {
-      el.className = props[prop];
-    } else if (prop !== 'children') {
-      el[prop] = props[prop];
+    if (prop !== 'children') {
+      if (prop.startsWith('on')) {
+        const eventType = prop.toLowerCase().slice(2);
+        el.addEventListener(eventType, props[prop]);
+      } else if (prop === 'class') {
+        el.className = props[prop];
+      } else {
+        el[prop] = props[prop];
+      }
     }
   });
 }
@@ -111,6 +115,7 @@ function preformWorkOfUnit(fiber) {
 
 function commitRoot() {
   commitWork(root.child);
+  root = null;
 }
 
 function commitWork(fiber) {

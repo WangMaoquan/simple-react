@@ -8,7 +8,16 @@ import React from './package/React.js';
 // );
 
 function Counter({ num }) {
-  return <p>counter: {num}</p>;
+  function add() {
+    console.log('click');
+  }
+
+  return (
+    <div>
+      <p>counter: {num}</p>
+      <button onClick={add}>click</button>
+    </div>
+  );
 }
 
 function App({ num }) {
