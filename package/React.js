@@ -31,6 +31,19 @@ function workLoop(deadline) {
   while (!shouldYield && nextWorkOfUnit) {
     nextWorkOfUnit = preformWorkOfUnit(nextWorkOfUnit);
     if (workInProgress?.sibling?.type === nextWorkOfUnit?.type) {
+      if (workInProgress?.return) {
+        let fiber = workInProgress.return.child;
+        let prev = null;
+        while (fiber && fiber.type !== workInProgress.type) {
+          prev = fiber;
+          fiber = fiber.sibling;
+        }
+        if (prev) {
+          prev.sibling = workInProgress;
+        } else {
+          workInProgress.return.child = workInProgress;
+        }
+      }
       nextWorkOfUnit = null;
     }
     shouldYield = deadline.timeRemaining() < 1;

@@ -2,7 +2,8 @@ import React from './package/React';
 // import Counter from './src/Counter';
 // import TestDeletions from './src/TestDeletions';
 // import Deletions from './src/Deletions';
-import Test from './src/Test';
+// import Test from './src/Test';
+import Test1 from './src/Ta';
 
 // const App = React.createElement(
 //   'div',
@@ -31,7 +32,8 @@ function App({ num }) {
       <div className="btns">
         <button onClick={changeShow}>change-show</button>
       </div> */}
-      <Test />
+      {/* <Test /> */}
+      <Test1 />
     </div>
   );
 }
