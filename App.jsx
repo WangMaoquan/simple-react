@@ -1,7 +1,8 @@
 import React from './package/React';
-import Counter from './src/Counter';
-import TestDeletions from './src/TestDeletions';
-import Deletions from './src/Deletions';
+// import Counter from './src/Counter';
+// import TestDeletions from './src/TestDeletions';
+// import Deletions from './src/Deletions';
+import Test from './src/Test';
 
 // const App = React.createElement(
 //   'div',
@@ -10,7 +11,13 @@ import Deletions from './src/Deletions';
 //   React.createElement('div', { class: 'text2' }, 'hi, react2'),
 // );
 
+let show = true;
 function App({ num }) {
+  const changeShow = () => {
+    show = !show;
+    React.update();
+  };
+
   return (
     <div className="app">
       <p>hi-react: {num}</p>
@@ -18,7 +25,12 @@ function App({ num }) {
       {/* <Counter num={20}></Counter> */}
       {/* <Counter></Counter> */}
       {/* <TestDeletions /> */}
-      <Deletions />
+      {/* <Deletions /> */}
+      {show && <Test />}
+
+      <div className="btns">
+        <button onClick={changeShow}>change-show</button>
+      </div>
     </div>
   );
 }

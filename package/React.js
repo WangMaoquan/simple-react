@@ -111,7 +111,7 @@ function reconcileChildren(fiber, children) {
 }
 
 function updateFunctionComponent(fiber) {
-  const children = [fiber.type(fiber.props)];
+  const children = [fiber.type(fiber.props)].filter((child) => !!child);
   reconcileChildren(fiber, children);
 }
 
@@ -126,7 +126,7 @@ function updateHostComponent(fiber) {
     // 处理 props
     updateProps(el, props, {});
   }
-  const children = props?.children || [];
+  const children = (props?.children || []).filter((child) => !!child);
   reconcileChildren(fiber, children);
 }
 
