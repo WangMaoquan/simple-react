@@ -20,6 +20,7 @@ function createElement(type, props, ...children) {
   };
 }
 
+let deletions = [];
 let workInProgress = null;
 let currentRoot = null;
 let nextWorkOfUnit = null;
@@ -86,6 +87,9 @@ function reconcileChildren(fiber, children) {
         newFiber.alternate = oldFiber;
       } else {
         newFiber.effectTag = 'placement';
+        if (oldFiber) {
+          deletions.push(oldFiber);
+        }
       }
       if (oldFiber) {
         oldFiber = oldFiber.sibling;
@@ -145,8 +149,27 @@ function preformWorkOfUnit(fiber) {
 
 function commitRoot() {
   commitWork(workInProgress.child);
+  deletions.forEach(commitDeletions);
   currentRoot = workInProgress;
   workInProgress = null;
+  deletions = [];
+}
+
+/**
+ * 删除也就是们需要拿到 当前fiber.dom 然后通过 fiber.return.dom.removeChild 去删除
+ * 这时就会遇到两个问题 fiber 是 FC 也就是我们拿不到 dom 所以我们需要往下也就是 fiber.child
+ * 此时的fiber存在 dom, 但是它的 return 是 FC 所以我们需要啊 fiber.return.return 一直找到存在 dom 的
+ */
+function commitDeletions(fiber) {
+  if (fiber.dom) {
+    let parentFiber = fiber.return;
+    while (!parentFiber.dom) {
+      parentFiber = parentFiber.return;
+    }
+    parentFiber.dom.removeChild(fiber.dom);
+  } else {
+    commitDeletions(fiber.child);
+  }
 }
 
 function commitWork(fiber) {
