@@ -1,5 +1,7 @@
 import React from '../package/React';
 
+// 新旧 type 不一致 直接删除旧的
+
 function Bar() {
   return <div>bar</div>;
 }

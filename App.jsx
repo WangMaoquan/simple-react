@@ -1,6 +1,7 @@
 import React from './package/React';
 import Counter from './src/Counter';
 import TestDeletions from './src/TestDeletions';
+import Deletions from './src/Deletions';
 
 // const App = React.createElement(
 //   'div',
@@ -16,7 +17,8 @@ function App({ num }) {
       {/* <Counter num={10}></Counter> */}
       {/* <Counter num={20}></Counter> */}
       {/* <Counter></Counter> */}
-      <TestDeletions />
+      {/* <TestDeletions /> */}
+      <Deletions />
     </div>
   );
 }

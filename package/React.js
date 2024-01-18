@@ -101,6 +101,12 @@ function reconcileChildren(fiber, children) {
       }
       prevChild = newFiber;
     });
+
+    // 处理完 newFiber children 后, 如果 oldFiber 还有值 说明还需要处理
+    while (oldFiber) {
+      deletions.push(oldFiber);
+      oldFiber = oldFiber.sibling;
+    }
   }
 }
 
