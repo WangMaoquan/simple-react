@@ -24,10 +24,15 @@ let deletions = [];
 let workInProgress = null;
 let currentRoot = null;
 let nextWorkOfUnit = null;
+let currentUpdateFiber = null;
+
 function workLoop(deadline) {
   let shouldYield = false;
   while (!shouldYield && nextWorkOfUnit) {
     nextWorkOfUnit = preformWorkOfUnit(nextWorkOfUnit);
+    if (workInProgress?.sibling?.type === nextWorkOfUnit?.type) {
+      nextWorkOfUnit = null;
+    }
     shouldYield = deadline.timeRemaining() < 1;
   }
 
@@ -111,6 +116,7 @@ function reconcileChildren(fiber, children) {
 }
 
 function updateFunctionComponent(fiber) {
+  currentUpdateFiber = fiber;
   const children = [fiber.type(fiber.props)].filter((child) => !!child);
   reconcileChildren(fiber, children);
 }
@@ -199,12 +205,14 @@ function commitWork(fiber) {
 
 // 触发更新的
 function update() {
-  workInProgress = {
-    dom: currentRoot.dom,
-    props: currentRoot.props,
-    alternate: currentRoot,
+  let fiber = currentUpdateFiber;
+  return () => {
+    workInProgress = {
+      ...fiber,
+      alternate: fiber,
+    };
+    nextWorkOfUnit = workInProgress;
   };
-  nextWorkOfUnit = workInProgress;
 }
 
 function render(el, container) {

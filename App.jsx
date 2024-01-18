@@ -20,17 +20,18 @@ function App({ num }) {
 
   return (
     <div className="app">
-      <p>hi-react: {num}</p>
+      {/* <p>hi-react: {num}</p> */}
       {/* <Counter num={10}></Counter> */}
       {/* <Counter num={20}></Counter> */}
       {/* <Counter></Counter> */}
       {/* <TestDeletions /> */}
       {/* <Deletions /> */}
-      {show && <Test />}
+      {/* {show && <Test />}
 
       <div className="btns">
         <button onClick={changeShow}>change-show</button>
-      </div>
+      </div> */}
+      <Test />
     </div>
   );
 }
