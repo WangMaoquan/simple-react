@@ -238,12 +238,44 @@ function render(el, container) {
   workInProgress = nextWorkOfUnit;
 }
 
+/**
+ * 触发更新其实就时 update
+ * 我们要做的就是 怎么去修改 state
+ *
+ * 首先 FC 会被重新执行, 所以我们需要 保存之前 state 的状态, 不然就会一直是 inital
+ * 那么保存在哪? FC 对应的fiber
+ */
+function useState(inital) {
+  const fiber = currentUpdateFiber;
+  const oldState = fiber?.alternate?.stateHook;
+  const stateHook = {
+    state: oldState ? oldState?.state : inital,
+  };
+
+  fiber.stateHook = stateHook;
+
+  function setState(action) {
+    // 重新赋值
+    stateHook.state = action(stateHook.state);
+
+    // 更新
+    workInProgress = {
+      ...fiber,
+      alternate: fiber,
+    };
+    nextWorkOfUnit = workInProgress;
+  }
+
+  return [stateHook.state, setState];
+}
+
 requestIdleCallback(workLoop);
 
 const React = {
   createElement,
   render,
   update,
+  useState,
 };
 
 export default React;
