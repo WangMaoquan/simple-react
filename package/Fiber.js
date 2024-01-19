@@ -8,7 +8,7 @@ export class Fiber {
     this.props = props;
     this.alternate = null; // 备份的fiber
     this.effectTag = undefined;
-    this.stateHook = null;
+    this.stateHooks = undefined;
   }
 }
 

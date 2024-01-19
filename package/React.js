@@ -129,6 +129,8 @@ function reconcileChildren(fiber, children) {
 }
 
 function updateFunctionComponent(fiber) {
+  stateHooks = [];
+  stateHookIndex = 0;
   currentUpdateFiber = fiber;
   const children = [fiber.type(fiber.props)].filter((child) => !!child);
   reconcileChildren(fiber, children);
@@ -238,6 +240,9 @@ function render(el, container) {
   workInProgress = nextWorkOfUnit;
 }
 
+// 保存每次
+let stateHooks = [];
+let stateHookIndex = 0;
 /**
  * 触发更新其实就时 update
  * 我们要做的就是 怎么去修改 state
@@ -247,16 +252,29 @@ function render(el, container) {
  */
 function useState(inital) {
   const fiber = currentUpdateFiber;
-  const oldState = fiber?.alternate?.stateHook;
+  const oldState = fiber?.alternate?.stateHooks[stateHookIndex];
   const stateHook = {
     state: oldState ? oldState?.state : inital,
+    queue: oldState ? oldState?.queue : [],
   };
+  stateHooks.push(stateHook);
+  stateHookIndex++;
 
-  fiber.stateHook = stateHook;
+  fiber.stateHooks = stateHooks;
+
+  stateHook.queue.forEach(
+    (action) => (stateHook.state = action(stateHook.state)),
+  );
+
+  stateHook.queue = [];
 
   function setState(action) {
-    // 重新赋值
-    stateHook.state = action(stateHook.state);
+    const isFunction = typeof action === 'function';
+    const eagerState = isFunction ? action(stateHook.state) : action;
+    if (eagerState === stateHook.state) {
+      return;
+    }
+    stateHook.queue.push(isFunction ? action : () => action);
 
     // 更新
     workInProgress = {
