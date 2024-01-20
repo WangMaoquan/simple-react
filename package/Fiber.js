@@ -1,5 +1,5 @@
 export class Fiber {
-  constructor(type, props, dom) {
+  constructor(type, props, dom, effectHooks) {
     this.child = null;
     this.return = null;
     this.sibling = null;

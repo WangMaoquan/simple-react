@@ -132,6 +132,7 @@ function updateFunctionComponent(fiber) {
   stateHooks = [];
   effectHooks = [];
   stateHookIndex = 0;
+  effectHookIndex = 0;
   currentUpdateFiber = fiber;
   const children = [fiber.type(fiber.props)].filter((child) => !!child);
   reconcileChildren(fiber, children);
@@ -290,13 +291,17 @@ function useState(inital) {
 }
 
 let effectHooks;
+let effectHookIndex;
 function useEffect(callback, deps) {
   const effectHook = {
     callback,
     deps,
+    cleanup: currentUpdateFiber?.effectHooks?.[effectHookIndex]?.cleanup, // 执行时机 在执行 effect 之前
   };
   effectHooks.push(effectHook);
+  console.log(currentUpdateFiber);
   currentUpdateFiber.effectHooks = [...effectHooks];
+  effectHookIndex++;
 }
 
 function commitEffectHooks() {
@@ -307,11 +312,10 @@ function commitEffectHooks() {
     if (!fiber.alternate) {
       // 初始化
       fiber?.effectHooks?.forEach((hook) => {
-        hook?.callback();
+        hook.cleanup = hook?.callback();
       });
     } else {
       // update
-      console.log('update');
       const oldEffectHooks = fiber?.alternate?.effectHooks;
       fiber?.effectHooks?.forEach((newHook, hookIndex) => {
         if (newHook.deps.length > 0) {
@@ -320,13 +324,27 @@ function commitEffectHooks() {
               return oldDep !== newHook.deps[depIndex];
             },
           );
-          needUpdate && newHook.callback();
+          needUpdate && (newHook.cleanup = newHook.callback());
         }
       });
     }
     run(fiber.child);
     run(fiber.sibling);
   }
+  function runCleanup(fiber) {
+    if (!fiber) {
+      return;
+    }
+    fiber?.alternate?.effectHooks?.forEach((hook) => {
+      if (hook.deps.length > 0) {
+        hook?.cleanup?.();
+      }
+    });
+    runCleanup(fiber.child);
+    runCleanup(fiber.sibling);
+  }
+  console.log(2);
+  runCleanup(workInProgress);
   run(workInProgress);
 }
 

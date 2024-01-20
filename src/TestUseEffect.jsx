@@ -9,6 +9,9 @@ const Counter = () => {
 
   React.useEffect(() => {
     console.log('Counter-count', count);
+    return () => {
+      console.log('Counter cleanup');
+    };
   }, [count]);
 
   return (
@@ -28,6 +31,9 @@ const Counter1 = () => {
 
   React.useEffect(() => {
     console.log('Counter1-count', count);
+    return () => {
+      console.log('Counter1 cleanup');
+    };
   }, [count]);
 
   return (
@@ -42,10 +48,16 @@ export default function TestUseEffect() {
   const [count, setCount] = React.useState(10);
   React.useEffect(() => {
     console.log('init');
+    return () => {
+      console.log('deps 为空数组不会执行');
+    };
   }, []);
 
   React.useEffect(() => {
     console.log('update', count);
+    return () => {
+      console.log('TestUseEffect cleanup');
+    };
   }, [count]);
 
   const add = () => {
