@@ -9,6 +9,7 @@ export class Fiber {
     this.alternate = null; // 备份的fiber
     this.effectTag = undefined;
     this.stateHooks = undefined;
+    this.effectHooks = undefined;
   }
 }
 

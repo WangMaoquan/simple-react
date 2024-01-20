@@ -1,10 +1,11 @@
 import React from './package/React';
+import TestUseEffect from './src/TestUseEffect';
 // import Counter from './src/Counter';
 // import TestDeletions from './src/TestDeletions';
 // import Deletions from './src/Deletions';
 // import Test from './src/Test';
 // import Test1 from './src/Ta';
-import TestUseState from './src/TestUseState';
+// import TestUseState from './src/TestUseState';
 
 // const App = React.createElement(
 //   'div',
@@ -35,7 +36,8 @@ function App({ num }) {
       </div> */}
       {/* <Test /> */}
       {/* <Test1 /> */}
-      <TestUseState />
+      {/* <TestUseState /> */}
+      <TestUseEffect />
     </div>
   );
 }

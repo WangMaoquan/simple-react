@@ -176,6 +176,7 @@ function preformWorkOfUnit(fiber) {
 
 function commitRoot() {
   commitWork(workInProgress.child);
+  commitEffectHooks();
   deletions.forEach(commitDeletions);
   currentRoot = workInProgress;
   workInProgress = null;
@@ -287,6 +288,47 @@ function useState(inital) {
   return [stateHook.state, setState];
 }
 
+function useEffect(callback, deps) {
+  const effectHook = {
+    callback,
+    deps,
+  };
+  (workInProgress.effectHooks || (workInProgress.effectHooks = [])).push(
+    effectHook,
+  );
+}
+
+function commitEffectHooks() {
+  function run(fiber) {
+    if (!fiber) {
+      return;
+    }
+    if (!fiber.alternate) {
+      // 初始化
+      fiber?.effectHooks?.forEach((hook) => {
+        hook?.callback();
+      });
+    } else {
+      // update
+      console.log('update');
+      const oldEffectHooks = fiber?.alternate?.effectHooks;
+      fiber?.effectHook?.forEach((newHook, hookIndex) => {
+        if (newHook.deps.length > 0) {
+          const needUpdate = oldEffectHooks[hookIndex]?.deps?.forEach(
+            (oldDep, depIndex) => {
+              return oldDep !== newHook.deps[depIndex];
+            },
+          );
+          needUpdate && newHook.callback();
+        }
+      });
+    }
+    run(fiber.child);
+    run(fiber.sibling);
+  }
+  run(workInProgress);
+}
+
 requestIdleCallback(workLoop);
 
 const React = {
@@ -294,6 +336,7 @@ const React = {
   render,
   update,
   useState,
+  useEffect,
 };
 
 export default React;
