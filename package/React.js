@@ -130,6 +130,7 @@ function reconcileChildren(fiber, children) {
 
 function updateFunctionComponent(fiber) {
   stateHooks = [];
+  effectHooks = [];
   stateHookIndex = 0;
   currentUpdateFiber = fiber;
   const children = [fiber.type(fiber.props)].filter((child) => !!child);
@@ -288,14 +289,14 @@ function useState(inital) {
   return [stateHook.state, setState];
 }
 
+let effectHooks;
 function useEffect(callback, deps) {
   const effectHook = {
     callback,
     deps,
   };
-  (workInProgress.effectHooks || (workInProgress.effectHooks = [])).push(
-    effectHook,
-  );
+  effectHooks.push(effectHook);
+  currentUpdateFiber.effectHooks = [...effectHooks];
 }
 
 function commitEffectHooks() {
@@ -312,9 +313,9 @@ function commitEffectHooks() {
       // update
       console.log('update');
       const oldEffectHooks = fiber?.alternate?.effectHooks;
-      fiber?.effectHook?.forEach((newHook, hookIndex) => {
+      fiber?.effectHooks?.forEach((newHook, hookIndex) => {
         if (newHook.deps.length > 0) {
-          const needUpdate = oldEffectHooks[hookIndex]?.deps?.forEach(
+          const needUpdate = oldEffectHooks[hookIndex]?.deps?.some(
             (oldDep, depIndex) => {
               return oldDep !== newHook.deps[depIndex];
             },

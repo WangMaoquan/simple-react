@@ -7,6 +7,10 @@ const Counter = () => {
     setCount((c) => c + 1);
   }
 
+  React.useEffect(() => {
+    console.log('Counter-count', count);
+  }, [count]);
+
   return (
     <div className="counter">
       <p>count: {count}</p>
@@ -21,6 +25,10 @@ const Counter1 = () => {
   function add() {
     setCount((c) => c + 2);
   }
+
+  React.useEffect(() => {
+    console.log('Counter1-count', count);
+  }, [count]);
 
   return (
     <div className="counter">
